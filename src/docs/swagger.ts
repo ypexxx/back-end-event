@@ -28,8 +28,21 @@ const doc = {
 
         shemas: {
            LoginRequest: {
-            password: "12341234",
-           } ,
+                identifier: "Yuafiq Alfin",
+                password: "123456",
+           },
+
+           RegisterRequest: {
+                fullName: "fullName",
+                username: "username",
+                email: "email",
+                password: "password",
+                confirmPassword: "confirmpassword",
+           },
+
+           ActivationRequest : {
+                code: "abcdef",
+           }
         },
     },
 };

@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { encrypt } from "../utils/encryption";
+import { renderMailHtml, sendMail } from "../utils/mail/mail";
+import { CLIENT_HOST, EMAIL_SMTP_USER } from "../utils/env";
 
 export interface User {
     fullName: string;
@@ -22,10 +24,12 @@ const UserSchema = new Schema<User>({
     username: {
         type: Schema.Types.String,
         required: true,
+        unique: true,
     },
     email: {
         type: Schema.Types.String,
         required: true,
+        unique: true,
     },
     password: {
         type: Schema.Types.String,
@@ -54,7 +58,33 @@ const UserSchema = new Schema<User>({
 UserSchema.pre("save", function (next) {
     const user = this;
     user.password = encrypt(user.password);
+    user.activationCode = encrypt(user.id);
     next();
+});
+
+UserSchema.post("save", async function (doc, next) {
+    try {
+        const user = doc;
+        console.log("Send email to: ", user.email);
+        const contentMail = await renderMailHtml("registration-success.ejs", {
+            username: user.username,
+            fullName: user.fullName,
+            email: user.email,
+            activationLink: `${CLIENT_HOST}/auth/activation?code=${user.activationCode}`,
+        });
+
+        await sendMail({
+            from: EMAIL_SMTP_USER,
+            to: user.email,
+            subject: "Aktivasi akun anda",
+            html: contentMail,
+        });
+    } catch (error) {
+        console.log(error);
+    } finally {
+        next();
+    }
+    
 });
 
 UserSchema.methods.toJSON = function () {
